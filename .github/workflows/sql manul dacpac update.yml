@@ -1,0 +1,120 @@
+name: ArchSQLDB1
+
+on:
+    push:
+        branches: [ master ]
+    pull_request:
+        branches: [ master ]
+    workflow_dispatch:
+
+jobs:
+    build:
+        runs-on: windows-latest
+        steps:
+        - uses: actions/checkout@v1
+       
+   
+        - uses: actions/upload-artifact@v2
+          with:
+             name: AzureSQLDB
+             path: ${{ github.workspace }}\Database4.dacpac
+        
+    release:
+        needs: build
+        runs-on: windows-latest
+        steps:
+        - name: download AzureSQLDB artifact
+          uses: actions/download-artifact@v2.0.6
+          with:
+             name: AzureSQLDB
+        - name: AzureSQLDB
+          uses: azure/login@v1
+          with:
+             creds: ${{ secrets.AZURE_CREDENTIALS }}
+        - name: Azure SQL DEVDeploy  
+          uses: Azure/sql-action@v1
+          with:
+            server-name: 'globalbirla-server.database.windows.net'
+            connection-string: '${{ secrets.AZURE_SQL_CONNECTION_STRING }}'
+            dacpac-package: 'Database4.dacpac'
+            arguments: '/p:AllowIncompatiblePlatform=true'
+          
+    DEVdeploy:
+        needs: release
+        runs-on: windows-latest
+        steps:
+        - name: download AzureSQLDB artifact
+          uses: actions/download-artifact@v2.0.6
+          with:
+             name: AzureSQLDB
+        - name: AzureSQLDB
+          uses: azure/login@v1
+          with:
+             creds: ${{ secrets.AZURE_CREDENTIALS }}
+        - name: Azure SQL TestDeploy  
+          uses: Azure/sql-action@v1
+          with:
+            server-name:  'globalbirla-server.database.windows.net'
+            connection-string: '${{ secrets.AZURE_SQL_CONNECTION_STRING }}'
+            dacpac-package: 'Database4.dacpac'
+            arguments: '/p:AllowIncompatiblePlatform=true'
+            
+    TestDeploy:
+        needs: DEVdeploy
+        runs-on: windows-latest
+        steps:
+        - name: download AzureSQLDB artifact
+          uses: actions/download-artifact@v2.0.6
+          with:
+             name: AzureSQLDB
+        - name: AzureSQLDB
+          uses: azure/login@v1
+          with:
+             creds: ${{ secrets.AZURE_CREDENTIALS }}
+        - name: Azure SQL QADeploy  
+          uses: Azure/sql-action@v1
+          with:
+            server-name:  'globalbirla-server.database.windows.net'
+            connection-string: '${{ secrets.AZURE_SQL_CONNECTION_STRING }}'
+            dacpac-package: 'Database4.dacpac'
+            arguments: '/p:AllowIncompatiblePlatform=true'
+                  
+             
+    QADeploy:
+        needs: TestDeploy
+        runs-on: windows-latest
+        steps:
+        - name: download AzureSQLDB artifact
+          uses: actions/download-artifact@v2.0.6
+          with:
+             name: AzureSQLDB
+        - name: AzureSQLDB
+          uses: azure/login@v1
+          with:
+             creds: ${{ secrets.AZURE_CREDENTIALS }}
+        - name: Azure SQL PRODDeploy  
+          uses: Azure/sql-action@v1
+          with:
+            server-name:  'globalbirla-server.database.windows.net'
+            connection-string: '${{ secrets.AZURE_SQL_CONNECTION_STRING }}'
+            dacpac-package: 'Database77.dacpac'
+            arguments: '/p:AllowIncompatiblePlatform=true'      
+    PRODDeploy:
+        needs: QADeploy
+        runs-on: windows-latest
+        steps:
+        - name: download AzureSQLDB artifact
+          uses: actions/download-artifact@v2.0.6
+          with:
+             name: AzureSQLDB
+        - name: AzureSQLDB
+          uses: azure/login@v1
+          with:
+             creds: ${{ secrets.AZURE_CREDENTIALS }}
+        - name: Azure SQL STAGGINGDeploy  
+          uses: Azure/sql-action@v1
+          with:
+            server-name:  'globalbirla-server.database.windows.net'
+            connection-string: '${{ secrets.AZURE_SQL_CONNECTION_STRING }}'
+            dacpac-package: 'Database4.dacpac'
+            arguments: '/p:AllowIncompatiblePlatform=true'       
